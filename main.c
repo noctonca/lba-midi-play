@@ -127,10 +127,15 @@ static void audio_callback(ma_device *device, void *output,
         ma_uint32 block = remaining;
         if (ps->midi) {
             double samps = (ps->midi->time - ps->time_ms) * SAMPLE_RATE / 1000.0;
-            if (samps > 0.0 && (ma_uint32)samps < block)
-                block = (ma_uint32)samps;
-            else if (samps <= 0.0)
-                block = 0;
+            if (samps <= 0.0) {
+                block = 0; /* event overdue: fire before rendering */
+            } else {
+                ma_uint32 s = (ma_uint32)samps;
+                /* If samps rounds down to 0 (sub-sample gap), render 1 frame
+                 * so time advances past the event on the next dispatch. */
+                if (s == 0) s = 1;
+                if (s < block) block = s;
+            }
         }
 
         if (block > 0) {
