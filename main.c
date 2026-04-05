@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 /* ---------- single-header library implementations ---------- */
 #define TSF_IMPLEMENTATION
@@ -74,60 +75,91 @@ typedef struct {
  * miniaudio data callback — called from the audio thread
  * ---------------------------------------------------------------------- */
 
+static void dispatch_event(PlayState *ps, tml_message *m)
+{
+    switch (m->type) {
+    case TML_PROGRAM_CHANGE:
+        tsf_channel_set_presetnumber(ps->sf, m->channel, m->program,
+            (m->channel == 9));
+        break;
+    case TML_NOTE_ON:
+        if (m->velocity > 0)
+            tsf_channel_note_on(ps->sf, m->channel, m->key,
+                m->velocity / 127.0f);
+        else
+            tsf_channel_note_off(ps->sf, m->channel, m->key);
+        break;
+    case TML_NOTE_OFF:
+        tsf_channel_note_off(ps->sf, m->channel, m->key);
+        break;
+    case TML_PITCH_BEND:
+        tsf_channel_set_pitchwheel(ps->sf, m->channel, m->pitch_bend);
+        break;
+    case TML_CONTROL_CHANGE:
+        tsf_channel_midi_control(ps->sf, m->channel, m->control,
+            m->control_value);
+        break;
+    default:
+        break;
+    }
+}
+
 static void audio_callback(ma_device *device, void *output,
                             const void *input, ma_uint32 frame_count)
 {
-    PlayState *ps = (PlayState *)device->pUserData;
-    float     *out = (float *)output;
-    ma_uint32  f;
+    PlayState *ps        = (PlayState *)device->pUserData;
+    float     *out       = (float *)output;
+    ma_uint32  remaining = frame_count;
 
     (void)input;
 
-    if (ps->done || !ps->midi) {
+    if (ps->done) {
         memset(output, 0, frame_count * CHANNELS * sizeof(float));
-        ps->done = 1;
         return;
     }
 
-    for (f = 0; f < frame_count; f++) {
-        ps->time_ms += 1000.0 / SAMPLE_RATE;
+    while (remaining > 0) {
+        /*
+         * Render a batch of frames up to — but not including — the next
+         * MIDI event.  This replaces the previous per-sample loop and
+         * reduces tsf_render_float call count from ~44 100/s to ~events/s.
+         */
+        ma_uint32 block = remaining;
+        if (ps->midi) {
+            double samps = (ps->midi->time - ps->time_ms) * SAMPLE_RATE / 1000.0;
+            if (samps > 0.0 && (ma_uint32)samps < block)
+                block = (ma_uint32)samps;
+            else if (samps <= 0.0)
+                block = 0;
+        }
 
+        if (block > 0) {
+            tsf_render_float(ps->sf, out, (int)block, 0);
+
+            /*
+             * Soft limiter: tanhf saturates smoothly to ±1.0 instead of
+             * hard-clipping when multiple voices sum past the float ceiling.
+             * tanhf(x) ≈ x for |x| << 1 so quiet passages are unaffected.
+             */
+            for (ma_uint32 i = 0; i < block * CHANNELS; i++)
+                out[i] = tanhf(out[i]);
+
+            out            += block * CHANNELS;
+            ps->time_ms    += (double)block * 1000.0 / SAMPLE_RATE;
+            remaining      -= block;
+        }
+
+        /* Dispatch all events whose time has arrived */
         while (ps->midi && ps->time_ms >= ps->midi->time) {
-            switch (ps->midi->type) {
-            case TML_PROGRAM_CHANGE:
-                tsf_channel_set_presetnumber(ps->sf,
-                    ps->midi->channel, ps->midi->program,
-                    (ps->midi->channel == 9)); /* drum channel */
-                break;
-            case TML_NOTE_ON:
-                if (ps->midi->velocity > 0)
-                    tsf_channel_note_on(ps->sf, ps->midi->channel,
-                        ps->midi->key, ps->midi->velocity / 127.0f);
-                else
-                    tsf_channel_note_off(ps->sf, ps->midi->channel,
-                        ps->midi->key);
-                break;
-            case TML_NOTE_OFF:
-                tsf_channel_note_off(ps->sf, ps->midi->channel,
-                    ps->midi->key);
-                break;
-            case TML_PITCH_BEND:
-                tsf_channel_set_pitchwheel(ps->sf, ps->midi->channel,
-                    ps->midi->pitch_bend);
-                break;
-            case TML_CONTROL_CHANGE:
-                tsf_channel_midi_control(ps->sf, ps->midi->channel,
-                    ps->midi->control, ps->midi->control_value);
-                break;
-            default:
-                break;
-            }
+            dispatch_event(ps, ps->midi);
             ps->midi = ps->midi->next;
             if (!ps->midi) { ps->done = 1; break; }
         }
 
-        tsf_render_float(ps->sf, out, 1, 0);
-        out += CHANNELS;
+        if (ps->done) {
+            memset(out, 0, remaining * CHANNELS * sizeof(float));
+            break;
+        }
     }
 }
 
