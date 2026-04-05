@@ -226,6 +226,10 @@ int main(int argc, char **argv)
         return 1;
     }
     tsf_set_output(sf, TSF_STEREO_INTERLEAVED, SAMPLE_RATE, 0.0f);
+    /* GM channel 9 is percussion; it often has no Program Change event in the
+     * MIDI data (the spec says it's always drums).  TSF defaults uninitialized
+     * channels to preset 0 (piano), so we must prime it explicitly. */
+    tsf_channel_set_presetnumber(sf, 9, 0, 1 /* isDrum */);
     printf("Presets   : %d\n", tsf_get_presetcount(sf));
 
     /* 5. Playback state */
