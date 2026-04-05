@@ -170,26 +170,40 @@ int main(int argc, char **argv)
     }
     printf("Soundfont : %s\n", sf2_path);
 
-    /* 1. Load XMIDI entry from HQR */
-    uint8_t *xmi_data = NULL;
-    int xmi_size = hqr_get_entry_alloc(&xmi_data, hqr_path, track_index);
-    if (!xmi_size || !xmi_data) {
+    /* 1. Load entry from HQR */
+    uint8_t *raw_data = NULL;
+    int raw_size = hqr_get_entry_alloc(&raw_data, hqr_path, track_index);
+    if (!raw_size || !raw_data) {
         fprintf(stderr, "Error: failed to load track %d from '%s'\n",
                 track_index, hqr_path);
         return 1;
     }
-    printf("Loaded    : track %d (%d bytes, XMIDI)\n", track_index, xmi_size);
 
-    /* 2. Convert XMIDI → SMF */
+    /* 2. Convert XMIDI → SMF if needed, or use native SMF directly */
     uint8_t *smf_data = NULL;
-    uint32_t smf_size = convert_to_midi(xmi_data, (uint32_t)xmi_size, &smf_data);
-    free(xmi_data);
-    if (!smf_size || !smf_data) {
-        fprintf(stderr, "Error: XMIDI→SMF conversion failed for track %d\n",
-                track_index);
-        return 1;
+    uint32_t smf_size = 0;
+
+    if (raw_size >= 4 && memcmp(raw_data, "MThd", 4) == 0) {
+        /* Already a standard MIDI file (e.g. Midi_mi_win.hqr) */
+        printf("Loaded    : track %d (%d bytes, SMF native)\n",
+               track_index, raw_size);
+        smf_data = raw_data;
+        smf_size = (uint32_t)raw_size;
+        raw_data = NULL; /* ownership transferred to smf_data */
+    } else {
+        /* XMIDI IFF — convert to SMF */
+        printf("Loaded    : track %d (%d bytes, XMIDI)\n",
+               track_index, raw_size);
+        smf_size = convert_to_midi(raw_data, (uint32_t)raw_size, &smf_data);
+        free(raw_data);
+        raw_data = NULL;
+        if (!smf_size || !smf_data) {
+            fprintf(stderr, "Error: XMIDI→SMF conversion failed for track %d\n",
+                    track_index);
+            return 1;
+        }
+        printf("Converted : %u bytes SMF\n", smf_size);
     }
-    printf("Converted : %u bytes SMF\n", smf_size);
 
     /* 3. Parse SMF with TML */
     tml_message *midi_head = tml_load_memory(smf_data, (int)smf_size);

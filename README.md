@@ -40,33 +40,37 @@ loaded at runtime — see [Soundfonts](#soundfonts) below.
 
 # Play the Sound Blaster version of the same track
 ./lba-midi-play MIDI_SB.HQR 3
+
+# Play the LBAWin Windows port version (native SMF, richer arrangements)
+./lba-midi-play Midi_mi_win.hqr 3
 ```
 
 Press **Enter** to stop playback.
 
 ---
 
-## The Two MIDI Files
+## The MIDI Files
 
-LBA1 ships with two MIDI archives, each containing 33 tracks (indices 0–32):
+LBA1 exists in three MIDI variants, all 33 tracks (indices 0–32):
 
-| File | Audience | Target hardware |
-|------|----------|-----------------|
-| `MIDI_MI.HQR` | MIDI Interface | Roland MT-32 / Sound Canvas SC-55 or any GM MIDI port |
-| `MIDI_SB.HQR` | Sound Blaster FM | Sound Blaster OPL2/OPL3 FM synthesis |
+| File | Version | Format | Target hardware |
+|------|---------|--------|-----------------|
+| `MIDI_MI.HQR` | DOS | XMIDI IFF | Roland MT-32 / Sound Canvas SC-55 or any GM MIDI port |
+| `MIDI_SB.HQR` | DOS | XMIDI IFF | Sound Blaster OPL2/OPL3 FM synthesis |
+| `Midi_mi_win.hqr` | LBAWin port | Native SMF | General MIDI, Windows multimedia |
 
-Both files are XMIDI IFF containers compressed with LBA's LZ variant inside
-an HQR archive.
+This tool plays all three.
 
-### MIDI_MI — the "MIDI Interface" version
+### MIDI_MI.HQR — DOS "MIDI Interface" version
 
 Intended for an external MIDI port driving a Roland Sound Canvas SC-55 (the
-canonical LBA instrument — what the composers heard).  Arrangements are
+canonical LBA instrument — what the composers heard).  Stored as **XMIDI IFF**
+(Miles Sound System format), converted to SMF on load.  Arrangements are
 **richer**: more simultaneous voices, instruments such as Fretless Bass,
 Orchestral Harp, Synth Brass, Piccolo, and layered pad sounds.  File sizes
 are typically **larger** (e.g. track 8: 21 980 bytes vs 10 540 in MIDI_SB).
 
-### MIDI_SB — the "Sound Blaster FM" version
+### MIDI_SB.HQR — DOS "Sound Blaster FM" version
 
 Intended for the OPL2/OPL3 FM synthesis chip on Sound Blaster cards.  The
 original source (`PERSO.C`) selects `midi_sb.hqr` when `MidiFM` is set (FM
@@ -75,19 +79,37 @@ fewer simultaneous voices, simpler instrument choices.  OPL FM chips have
 limited polyphony and cannot reproduce complex pads or layered strings, so
 tracks were re-arranged accordingly.
 
+### Midi_mi_win.hqr — LBAWin port version
+
+Shipped with the fan-made **LBAWin** Windows port (dated 2001).  This file is
+**fundamentally different** from the DOS HQR files:
+
+- **Native SMF** (Standard MIDI File) — no XMIDI wrapping, no conversion needed
+- **SMF Format 1** (multi-track) with up to 14 separate instrument tracks per song
+- **Higher PPQN**: mostly 384 (some tracks 96 or 120) vs 60 for XMIDI-converted DOS
+- **Real tempo events** encoded per-track (64–133 BPM range) vs forced 120 BPM
+- **Longer arrangements**: most tracks are 30–50% larger in decompressed size
+- **Tracks 24/25 swapped**: the DOS version had a unique ~3 kB piece for 24/25;
+  the WIN version replaced both with a copy of track 3
+
+Track 31 (Adeline logo jingle) is slightly shorter in WIN (139 vs 166 bytes)
+and track 26 (FLA flute) is nearly identical.
+
 ### Which sounds better through a modern software synthesiser?
 
-With a high-quality General MIDI soundfont (FluidR3, GeneralUser GS,
-MuseScore, etc.) **MIDI_MI** is usually more faithful to the composers'
-intent — it has more notes, more instruments, and richer harmonics.  MIDI_SB
-may occasionally win on specific tracks if the simplified arrangement happens
-to sit better with a particular soundfont.  Try both.
+With a high-quality General MIDI soundfont **`Midi_mi_win.hqr`** is often the
+most musically complete option: higher timing resolution, proper multi-track
+layout, and richer arrangements.  **`MIDI_MI.HQR`** (XMIDI) is historically
+what DOS players heard through a General MIDI port.  `MIDI_SB.HQR` is closest
+to what most players actually experienced on typical mid-90s PC hardware.
 
 ---
 
 ## Track List
 
-All 33 tracks (indices 0–32) are present in both MIDI_MI.HQR and MIDI_SB.HQR.
+All 33 tracks (indices 0–32) are present in all three files.  Sizes in the
+table below are decompressed bytes from `MIDI_MI.HQR` (XMIDI); `Midi_mi_win.hqr`
+sizes are roughly 30–50% larger for most tracks.
 
 **How track assignment works:** each scene entry in SCENE.HQR carries its
 music track index at **byte offset 38** of the decompressed header (verified
@@ -145,13 +167,17 @@ track numbers.
 
 | Tracks | File | Decompressed size | Relationship |
 |--------|------|-------------------|--------------|
-| 0 = 18 | both MI and SB | 242 B | Identical in both files |
-| 8 = 9 = 32 | MI | 21 980 B | Identical |
-| 8 = 9 = 32 | SB | 10 540 B | Identical |
-| 24 = 25 | both MI and SB | 3 052 B | Identical in both files |
-| 26, 31 | MI = SB | 322 B / 166 B | Same bytes across both HQR files |
+| 0 = 18 | DOS MI and SB | 242 B | Identical in both DOS files |
+| 8 = 9 = 32 | DOS MI | 21 980 B | Identical |
+| 8 = 9 = 32 | DOS SB | 10 540 B | Identical |
+| 24 = 25 | DOS MI and SB | 3 052 B | Identical pair (unique content, not in WIN) |
+| 26, 31 | DOS MI = SB | 322 B / 166 B | Same bytes across DOS files |
+| 0 = 18 | WIN | 225 B | Identical (new arrangement) |
+| 3 = 24 = 25 | WIN | 12 343 B | WIN tracks 24/25 replaced with track 3's content |
+| 8 = 9 = 32 | WIN | 29 833 B | Identical (expanded arrangement) |
 
 Tracks 0 and 18 are also identical cross-file (MI[0] == SB[0], MI[18] == SB[18]).
+The DOS-only 3 052-byte piece in tracks 24/25 does not appear anywhere in the WIN file.
 
 ---
 
@@ -183,9 +209,10 @@ Compression modes
 2   LBA LZ mode 2 — back-reference length = (offset & 0x0F) + 3
 ```
 
-All MIDI entries in the game's MIDI HQR files use compression mode 1.
-The compression ratio is roughly 2:1 (e.g. track 3: 8 612 bytes real,
-4 790 bytes stored).
+All MIDI entries in the DOS HQR files use compression mode 1.
+The compression ratio is roughly 2:1 (e.g. MIDI_MI track 3: 8 612 bytes real,
+4 790 bytes stored).  `Midi_mi_win.hqr` also uses mode 1 for most entries;
+track 31 and track 26 use mode 0 (uncompressed) in both DOS and WIN.
 
 ---
 
@@ -273,12 +300,16 @@ miniaudio.h  Cross-platform audio I/O (single-header, David Reid / mackron)
 
 ### Audio pipeline
 
+The tool auto-detects format by checking the first four bytes of each entry
+(`FORM` = XMIDI, `MThd` = native SMF):
+
 ```
-MIDI_MI.HQR (on disk)
+HQR file (on disk)
       │  hqr_get_entry_alloc()  — LZ decompress
       ▼
-XMIDI bytes (in memory)
-      │  convert_to_midi()      — XMIDI IFF → SMF format 0
+raw bytes (XMIDI or SMF)
+      │  if XMIDI: convert_to_midi() — XMIDI IFF → SMF format 0
+      │  if SMF:   used directly     (Midi_mi_win.hqr)
       ▼
 SMF bytes (in memory)
       │  tml_load_memory()      — parse events, build linked list
