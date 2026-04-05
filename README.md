@@ -220,34 +220,33 @@ The converter (`xmidi.c`, adapted from ScummVM/Exult via TwinEngine) produces
 The tool discovers soundfonts in this order:
 
 1. Path given as third argument: `./lba-midi-play MIDI_MI.HQR 3 my.sf2`
-2. `/Library/Audio/Sounds/Banks/FluidR3_GM_GS.sf2` (macOS)
-3. `/Library/Audio/Sounds/Banks/Roland_SC-55_v3.7.sf2` (macOS)
-4. `/usr/share/sounds/sf2/FluidR3_GM.sf2` (Linux)
-5. `/usr/share/soundfonts/FluidR3_GM.sf2` (Linux)
-6. `/usr/share/sounds/sf2/TimGM6mb.sf2` (Linux)
+2. `/Library/Audio/Sounds/Banks/FluidR3_GM_GS.sf2`
+3. `/Library/Audio/Sounds/Banks/Roland_SC-55_v3.7.sf2`
+4. `/usr/share/sounds/sf2/FluidR3_GM.sf2`
+5. `/usr/share/soundfonts/FluidR3_GM.sf2`
+6. `/usr/share/sounds/sf2/TimGM6mb.sf2`
+
+If none of these are present, pass a path explicitly.
 
 ### Recommended soundfonts
 
 | Soundfont | Size | Notes |
 |-----------|------|-------|
-| **FluidR3_GM_GS.sf2** | 144 MB | Excellent all-rounder; macOS system install |
-| **Roland SC-55 v3.7.sf2** | 103 MB | Closest to the original composers' monitor; macOS system install |
-| **GeneralUser GS** | ~30 MB | Lightweight, good GM coverage. Download from https://schristiancollins.com/generaluser.php |
-| **MuseScore_General.sf3** | ~43 MB | Modern compressed SF3 (not supported by TSF — TSF needs SF2) |
+| **FluidR3_GM.sf2** | 144 MB | Excellent all-rounder; widely available |
+| **GeneralUser GS** | ~30 MB | Lightweight, good GM coverage — [download](https://schristiancollins.com/generaluser.php) |
+| **Roland SC-55 samples** | varies | Closest to the original composers' monitor; source your own SF2 |
 | **TimGM6mb.sf2** | 6 MB | Tiny, usable, common on Linux |
+| ~~MuseScore_General.sf3~~ | — | SF3 format — not supported by TSF, which requires SF2 |
 
 ### The Roland SC-55 note
 
 LBA's music was composed and arranged specifically for the **Roland Sound
 Canvas SC-55** — the gold standard consumer GM synth of 1994.  If you have
 access to a Roland SC-55 sample library in SF2 format, that is the most
-historically accurate playback.  The macOS system install of
-`Roland_SC-55_v3.7.sf2` is a good approximation.
+historically accurate playback.
 
-To use it:
 ```sh
-./lba-midi-play MIDI_MI.HQR 3 \
-  "/Library/Audio/Sounds/Banks/Roland_SC-55_v3.7.sf2"
+./lba-midi-play MIDI_MI.HQR 3 /path/to/roland-sc55.sf2
 ```
 
 ---
