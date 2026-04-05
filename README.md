@@ -81,8 +81,12 @@ tracks were re-arranged accordingly.
 
 ### Midi_mi_win.hqr — LBAWin port version
 
-Shipped with the fan-made **LBAWin** Windows port (dated 2001).  This file is
-**fundamentally different** from the DOS HQR files:
+Shipped with the **LBAWin** Windows port (dated 2001), created by
+**Sébastien Viannay** — an original Adeline Software developer (story coding
+on LBA1, programming on LBA2).  Not a commercial release; distributed via
+the Magicball Network (`magicball.net`).  The GOG and Steam releases ship
+the DOS files only; `Midi_mi_win.hqr` must be sourced from LBAWin separately.
+This file is **fundamentally different** from the DOS HQR files:
 
 - **Native SMF** (Standard MIDI File) — no XMIDI wrapping, no conversion needed
 - **SMF Format 1** (multi-track) with up to 14 separate instrument tracks per song
