@@ -53,7 +53,7 @@ LBA1 ships with two MIDI archives, each containing 33 tracks (indices 0–32):
 | File | Audience | Target hardware |
 |------|----------|-----------------|
 | `MIDI_MI.HQR` | MIDI Interface | Roland MT-32 / Sound Canvas SC-55 or any GM MIDI port |
-| `MIDI_SB.HQR` | Sound Blaster | Sound Blaster OPL/FM or AWE32 wavetable |
+| `MIDI_SB.HQR` | Sound Blaster FM | Sound Blaster OPL2/OPL3 FM synthesis |
 
 Both files are XMIDI IFF containers compressed with LBA's LZ variant inside
 an HQR archive.
@@ -66,13 +66,14 @@ canonical LBA instrument — what the composers heard).  Arrangements are
 Orchestral Harp, Synth Brass, Piccolo, and layered pad sounds.  File sizes
 are typically **larger** (e.g. track 8: 21 980 bytes vs 10 540 in MIDI_SB).
 
-### MIDI_SB — the "Sound Blaster" version
+### MIDI_SB — the "Sound Blaster FM" version
 
-Intended for a Sound Blaster card (OPL2/OPL3 FM chip, or later the AWE32
-wavetable).  Arrangements are **simplified**: fewer simultaneous voices,
-simpler instrument choices.  The OPL FM chips have limited polyphony and
-cannot reproduce complex pads or layered strings, so tracks were re-arranged
-accordingly.
+Intended for the OPL2/OPL3 FM synthesis chip on Sound Blaster cards.  The
+original source (`PERSO.C`) selects `midi_sb.hqr` when `MidiFM` is set (FM
+driver active) and `midi_mi.hqr` otherwise.  Arrangements are **simplified**:
+fewer simultaneous voices, simpler instrument choices.  OPL FM chips have
+limited polyphony and cannot reproduce complex pads or layered strings, so
+tracks were re-arranged accordingly.
 
 ### Which sounds better through a modern software synthesiser?
 
@@ -95,18 +96,24 @@ scene header are triggered by in-game script events (`PLAY_MIDI` opcode) or
 hardcoded engine calls.  Scene names come from the ScummVM TwinE engine's
 `LBA1SceneId` enum (`engines/twine/shared.h`).
 
+**CD audio:** `PlayMusic()` in `AMBIANCE.C` routes tracks **1–9 to the CD
+drive** (`PlayCdTrack()`) when `CDEnable` is set, bypassing the MIDI files
+entirely for those tracks.  Tracks 10–32 are always played from the MIDI HQR.
+The "CD audio track N" notes in the table below give the corresponding disc
+track numbers.
+
 | Idx | MI size | Trigger | Scene / context | Notes |
 |-----|---------|---------|-----------------|-------|
 | 0 | 242 B | Script only | — | Single Recorder note; identical to track 18. Never triggered from a scene header. |
-| 1 | 7 274 B | Scene header + code | Principal Island Ruins (17), White Leaf Desert Maze (57), Brundle Island teleportation (95, 99); **main menu** (hardcoded in engine) | |
+| 1 | 7 274 B | Scene header + code | Principal Island Ruins (17), White Leaf Desert Maze (57), Brundle Island teleportation (95, 99); **intro dream sequence** — played immediately before INTROD.FLA (hardcoded) | CD audio track 2 when CD enabled |
 | 2 | 8 104 B | Scene header | Principal Island Harbor (11), Ticket Office (22), White Leaf Desert Temple 2nd (41), Hamalayi Mountains fighting scenes (62, 63, 69), Polar Island rocky peak (110, 111) | Action / battle theme |
 | 3 | 8 612 B | Scene header | Rebellion Island Harbor (59), Rebellion Island Rebel camp (60) | |
 | 4 | 1 768 B | Scene header | Citadel Island Warehouse (35), White Leaf Desert outside Temple of Bu (36), Fortress Island outside (84), Fortress Island Docks (100) | |
 | 5 | 5 738 B | Scene header | Citadel Island near tavern (2) & pharmacy (3), White Leaf Desert Temple 1st (8) & 2nd (40), Hamalayi Mountains Prison (64), Fortress Island Secret passage (85), Principal Island inside fortress (105) | |
-| 6 | 3 422 B | Scene header | Citadel Island Twinsen's house (5), Principal Island Library (10), Old Burg (13), inside Rabbibunny house (28), Stables (32), House with TV (58), Tippet Island Village (74) | |
+| 6 | 3 422 B | Scene header + code | Citadel Island Twinsen's house (5), Principal Island Library (10), Old Burg (13), inside Rabbibunny house (28), Stables (32), House with TV (58), Tippet Island Village (74); **DEMO version end credits** (hardcoded) | CD audio track 7 when CD enabled |
 | 7 | 9 394 B | Scene header | Hamalayi Mountains landing place (9), Mutation centre 1st (67), Catamaran dock (72) | |
 | 8 | 21 980 B | Script only | — | Identical to tracks 9 and 32 (SHA256 confirmed). Never triggered from a scene header — played via script events. |
-| 9 | 21 980 B | Scene header | Principal Island Port Belooga (24), Tippet Island near Dino-Fly (78), Hamalayi Mountains Ski resort (96), Principal Island house in Port Belooga (102) | Byte-for-byte copy of track 8 |
+| 9 | 21 980 B | Scene header + code | Principal Island Port Belooga (24), Tippet Island near Dino-Fly (78), Hamalayi Mountains Ski resort (96), Principal Island house in Port Belooga (102); **Options Menu** (hardcoded in `GAMEMENU.C` `OptionsMenu()`, non-CD) + **credits loop** (hardcoded in `PERSO.C`) | Byte-for-byte copy of track 8. CD audio track 10 when CD enabled |
 | 10 | 3 000 B | Scene header | Hamalayi Mountains Rabbibunny village (15), Principal Island outside library (18), Peg Leg Street (25), Bunker near clear water (73), Polar Island 2nd scene (106) | |
 | 11 | 956 B | Script only | — | |
 | 12 | 1 158 B | Scene header | Citadel Island Cellar of Tavern (33), Principal Island inside water tower (38), Hamalayi Mountains inside transporter (66), outside prison (71) | |
@@ -123,7 +130,7 @@ hardcoded engine calls.  Scene names come from the ScummVM TwinE engine's
 | 23 | 1 734 B | Script only | — | |
 | 24 | 3 052 B | Script only | — | Identical to track 25 (SHA256 confirmed) |
 | 25 | 3 052 B | Script only | — | Identical to track 24 (SHA256 confirmed) |
-| 26 | 322 B | Script only | — | Identical between MIDI_MI and MIDI_SB |
+| 26 | 322 B | Code only | **FLA cutscene flute music** (hardcoded in `PLAYFLA.C`, comment `// fla flute`) | Identical between MIDI_MI and MIDI_SB |
 | 27 | 844 B | Scene header | Citadel Island inside Rabbibunny house (16), Sewer 1st scene (34), Proxima Island Forger's house (48), Sewer (51), Principal Island house at Peg Leg Street (52), Citadel Island Sewer secret (55), Principal Island Sewer secret (56), Fortress Island Secret in fortress (86) | Underground / sewers / small interiors |
 | 28 | 718 B | Scene header | Proxima Island Museum (43), Hamalayi Mountains Mutation centre 2nd (68), Fortress Island outside fortress destroyed (93), Polar Island 3rd scene (107) | |
 | 29 | 2 210 B | Scene header | Proxima Island near Inventor's house (44) | Single scene |
