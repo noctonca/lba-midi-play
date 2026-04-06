@@ -28,8 +28,8 @@ make
   system-wide `.sf2` automatically.
 - **macOS:** drop **`FluidR3_GM_GS.sf2`** into `/Library/Audio/Sounds/Banks/`, or
   pass any `.sf2` path as the third argument (see [Soundfonts](#soundfonts)).
-- **Windows:** pass the full path to a `.sf2` as the third argument (no default
-  search paths in this build yet).
+- **Windows:** build with **MSYS2 MinGW** (`make` → `.exe`), then pass a `.sf2`
+  path (see [Build → Windows](#windows-msys2-portable-across-drives)).
 
 If you get **no soundfont found**, add the font explicitly:
 
@@ -47,16 +47,42 @@ Press **Enter** to stop playback.
 ## Build
 
 ```sh
-# Clone or copy this directory alongside your game files
+# Clone or copy this directory alongside your game files, then:
 make
-
-# macOS links CoreAudio/AudioToolbox automatically.
-# Linux needs: -lpthread -ldl -lm  (the Makefile handles this).
-# Windows: not wired in the Makefile yet; building under MSYS with a Unix-like
-# toolchain should be possible (to be verified).
 ```
 
-Requirements: a C99 compiler (`cc`), `make`, and `tsf.h` / `tml.h` /
+The Makefile picks **linker flags** from `uname`: macOS (Core Audio), Linux
+(`-lpthread -ldl -lm`), **MSYS2 MinGW** (`-lpthread -lm` — no `libdl` on
+Windows).  No `configure` step; only `cc`, `make`, and the vendored headers.
+
+### Windows (MSYS2, portable across drives)
+
+Use a **MinGW** environment (**MINGW64** or **UCRT64** in MSYS2), not the old
+“MSYS”-only shell, so you get a normal Windows `.exe` and `uname` reports a
+`MINGW…` system (which the Makefile recognizes).
+
+**Path to the repo:** MSYS maps drives as `/d/...`, `/c/...`.  Examples:
+
+```sh
+# Project on D:  →  D:\lba2-hacking\lba-midi-play
+cd /d/lba2-hacking/lba-midi-play
+
+# Or under your MSYS home (often on C:), e.g. /home/User-PC/lba2-hacking/lba-midi-play
+cd ~/lba2-hacking/lba-midi-play
+
+make
+./lba-midi-play.exe MIDI_MI.HQR 3 C:/path/to/some-font.sf2
+```  Pass a **`.sf2` path** as the third
+argument (see [Soundfonts](#soundfonts)); there are no Windows default search
+paths in the binary yet.
+
+One-time MSYS2 setup (from a MinGW shell):
+
+```sh
+pacman -S mingw-w64-x86_64-gcc make
+```
+
+Requirements: a C99 compiler (`cc` / `gcc`), `make`, and `tsf.h` / `tml.h` /
 `miniaudio.h` (vendored in the repo).  Implementation: **TinySoundFont** +
 **miniaudio** — no extra libraries to link beyond the OS.  Soundfonts are
 loaded at runtime — see [Soundfonts](#soundfonts).
