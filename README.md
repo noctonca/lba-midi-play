@@ -123,6 +123,13 @@ LBA1 exists in three MIDI variants, all 33 tracks (indices 0–32 — see
 | `MIDI_SB.HQR` | DOS | XMIDI IFF | Sound Blaster OPL2/OPL3 FM synthesis |
 | `Midi_mi_win.hqr` | LBAWin port | Native SMF | General MIDI, Windows multimedia |
 
+For the **two DOS** HQRs, **`MIDI_MI`** is the **full General MIDI** soundtrack
+— written for **MPU-401 / Wave Blaster / external GM** class hardware (the
+high-quality path when you had the gear).  **`MIDI_SB`** is the **Sound Blaster
+FM** version: **simplified** arrangements for the **OPL** chip on the machines
+most players actually had.  Same music in spirit, but **MI** is the
+less-constrained arrangement; **SB** is the hardware compromise.
+
 The **MIDI_MI** data follows **General MIDI** (GM): fixed “program 1 = piano,
 33 = bass,” etc.  Some DOS menus also offered **Roland MT-32**, but MT-32 uses
 a **different** instrument list than GM, so the same file often sounds wrong on
@@ -177,11 +184,14 @@ and track 26 (FLA flute) is nearly identical.
 
 ### Soundfonts and the three MIDI sources
 
-There is no single “right” version to prefer — each HQR reflects a different
-target (DOS GM, DOS FM, LBAWin SMF).  The interesting part of playing these
-tracks today is **trying different General MIDI soundfonts**: the same MIDI
-can feel very different depending on the bank, which is what this tool is
-really for.
+There is no single “right” **soundfont** to use with the GM HQRs — part of the
+fun is **trying different `.sf2` banks**.  That is separate from **which HQR**
+you open: **`MIDI_MI`** vs **`MIDI_SB`** are different **arrangements** (GM vs
+FM-targeted), as at the start of this section.
+
+The interesting part of playing **`MIDI_MI`** / **`Midi_mi_win`** today is
+**trying different General MIDI soundfonts**: the same MIDI can feel very
+different depending on the bank, which is what this tool is really for.
 
 ---
 
