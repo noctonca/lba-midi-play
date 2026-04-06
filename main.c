@@ -6,7 +6,7 @@
  *   ./lba-midi-play <hqr> <index>             -- play with default soundfont
  *   ./lba-midi-play <hqr> <index> <sf2>       -- play with given soundfont
  *
- * Press Enter to stop playback.
+ * Playback exits when the track ends, or press Enter to stop early.
  *
  * Build dependencies (single-header, included here):
  *   tsf.h       — TinySoundFont synthesiser
@@ -18,6 +18,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
+#if defined(_WIN32)
+#include <conio.h>
+#include <windows.h>
+#else
+#include <sys/select.h>
+#include <unistd.h>
+#endif
 
 /* ---------- single-header library implementations ---------- */
 #define TSF_IMPLEMENTATION
@@ -70,7 +78,7 @@ typedef struct {
     tsf         *sf;
     tml_message *midi;     /* current position in the TML message list */
     double       time_ms;  /* playback time in milliseconds */
-    int          done;     /* set to 1 when all events have been processed */
+    volatile int done;     /* set to 1 when all events have been processed */
 } PlayState;
 
 /* -------------------------------------------------------------------------
@@ -168,6 +176,38 @@ static void audio_callback(ma_device *device, void *output,
             break;
         }
     }
+}
+
+/*
+ * Wait until the audio callback sets ps->done (track finished), or the user
+ * requests an early stop (Enter).  Returns 1 if the user stopped early, else 0.
+ */
+static int wait_playback(volatile int *done)
+{
+#if defined(_WIN32)
+    while (!*done) {
+        if (_kbhit()) {
+            (void)_getch();
+            *done = 1;
+            return 1;
+        }
+        Sleep(50);
+    }
+#else
+    while (!*done) {
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(STDIN_FILENO, &fds);
+        struct timeval tv = { 0, 50000 };
+        if (select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv) > 0) {
+            int c = getchar();
+            (void)c;
+            *done = 1;
+            return 1;
+        }
+    }
+#endif
+    return 0;
 }
 
 /* -------------------------------------------------------------------------
@@ -303,8 +343,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    printf("Playing   : track %d — press Enter to stop...\n", track_index);
-    getchar();
+    printf("Playing   : track %d — wait for end, or press Enter to stop early\n",
+           track_index);
+
+    int user_stop = wait_playback(&ps.done);
 
     /* 7. Clean up */
     ma_device_stop(&device);
@@ -312,6 +354,6 @@ int main(int argc, char **argv)
     tsf_close(sf);
     tml_free(midi_head);
 
-    printf("Stopped.\n");
+    printf("%s\n", user_stop ? "Stopped." : "Finished.");
     return 0;
 }

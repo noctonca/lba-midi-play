@@ -37,7 +37,8 @@ If you get **no soundfont found**, add the font explicitly:
 ./lba-midi-play MIDI_MI.HQR 3 ./MyFont.sf2
 ```
 
-Press **Enter** to stop playback.
+Playback **ends automatically** when the track finishes; press **Enter** to
+stop early.
 
 **More:** [Usage](#usage) · [Which HQR file?](#the-midi-files) ·
 [Track index](TRACKS.md) · [How it works](#implementation-notes)
@@ -108,7 +109,8 @@ loaded at runtime — see [Soundfonts](#soundfonts).
 ./lba-midi-play Midi_mi_win.hqr 3
 ```
 
-Press **Enter** to stop playback.
+Playback **ends automatically** when the track finishes; press **Enter** to
+stop early.
 
 ---
 
