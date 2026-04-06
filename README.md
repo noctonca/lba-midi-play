@@ -1,47 +1,40 @@
 # lba-midi-play
 
-A small **command-line** player for the MIDI music in **Little Big Adventure 1**
-(1994): point it at `MIDI_MI.HQR`, `MIDI_SB.HQR`, or `Midi_mi_win.hqr` from your
-game files and it plays a chosen track through your speakers.
+Small command-line player for the MIDI music in Little Big Adventure 1 (1994):
+point it at `MIDI_MI.HQR`, `MIDI_SB.HQR`, or `Midi_mi_win.hqr` from your game
+files and it plays a chosen track through your speakers.
 
 ---
 
 ## Quick start
 
-**You need two things:**
-
-1. **An HQR file from the game** (e.g. `MIDI_MI.HQR`) — copy it next to the
-   built binary or pass a path to it.
-2. **A General MIDI `.sf2` soundfont** — the HQR only contains *MIDI* (note
-   data). A soundfont is a big file that defines what those notes *sound like*.
-   Without one, there is no audio.
-
-**Easiest path**
+1. An HQR file from the game (e.g. `MIDI_MI.HQR`) — next to the binary or pass a
+   path.
+2. A General MIDI `.sf2` soundfont. The HQR only holds MIDI (note data); the
+   soundfont defines the instruments. Without a font there is no audio.
 
 ```sh
 make
 ./lba-midi-play MIDI_MI.HQR 3
 ```
 
-- **Linux:** install a font package first (e.g. `timgm6mb-soundfont` on
-  Debian/Ubuntu — see [Soundfonts](#soundfonts)) so the tool can find a
-  system-wide `.sf2` automatically.
-- **macOS:** drop **`FluidR3_GM_GS.sf2`** into `/Library/Audio/Sounds/Banks/`, or
-  pass any `.sf2` path as the third argument (see [Soundfonts](#soundfonts)).
-- **Windows:** build with **MSYS2 MinGW** (`make` → `.exe`), then pass a `.sf2`
-  path (see [Build → Windows](#windows-msys2-portable-across-drives)).
+- Linux: install a font package (e.g. `timgm6mb-soundfont` on Debian/Ubuntu —
+  see [Soundfonts](#soundfonts)) so a system `.sf2` can be found automatically.
+- macOS: put `FluidR3_GM_GS.sf2` in `/Library/Audio/Sounds/Banks/`, or pass any
+  `.sf2` as the third argument ([Soundfonts](#soundfonts)).
+- Windows: build with MSYS2 MinGW (`make` → `.exe`), then pass a `.sf2` path
+  ([Build → Windows](#windows-msys2-portable-across-drives)).
 
-If you get **no soundfont found**, add the font explicitly:
+If the program prints that no soundfont was found, pass the font explicitly:
 
 ```sh
 ./lba-midi-play MIDI_MI.HQR 3 ./MyFont.sf2
 ```
 
-Playback **ends automatically** when the track finishes; press **Enter** to
-stop early.
+Playback exits when the track ends; press Enter to stop early.
 
-**More:** [Usage](#usage) · [Which HQR file?](#the-midi-files) ·
-[Track index](TRACKS.md) · [How it works](#implementation-notes)
+[Usage](#usage) · [Which HQR file?](#the-midi-files) · [Track index](TRACKS.md)
+· [How it works](#implementation-notes)
 
 ---
 
@@ -52,17 +45,17 @@ stop early.
 make
 ```
 
-The Makefile picks **linker flags** from `uname`: macOS (Core Audio), Linux
-(`-lpthread -ldl -lm`), **MSYS2 MinGW** (`-lpthread -lm` — no `libdl` on
-Windows).  No `configure` step; only `cc`, `make`, and the vendored headers.
+The Makefile picks linker flags from `uname`: macOS (Core Audio), Linux
+(`-lpthread -ldl -lm`), MSYS2 MinGW (`-lpthread -lm` — no `libdl` on Windows).
+No `configure`; only `cc`, `make`, and the vendored headers.
 
 ### Windows (MSYS2, portable across drives)
 
-Use a **MinGW** environment (**MINGW64** or **UCRT64** in MSYS2), not the old
-“MSYS”-only shell, so you get a normal Windows `.exe` and `uname` reports a
-`MINGW…` system (which the Makefile recognizes).
+Use a MinGW environment (MINGW64 or UCRT64 in MSYS2), not the old MSYS-only
+shell, so you get a normal Windows `.exe` and `uname` reports `MINGW…` (what
+the Makefile expects).
 
-**Path to the repo:** MSYS maps drives as `/d/...`, `/c/...`.  Examples:
+MSYS maps drives as `/d/...`, `/c/...`. Examples:
 
 ```sh
 # Project on D:  →  D:\lba2-hacking\lba-midi-play
@@ -73,9 +66,10 @@ cd ~/lba2-hacking/lba-midi-play
 
 make
 ./lba-midi-play.exe MIDI_MI.HQR 3 C:/path/to/some-font.sf2
-```  Pass a **`.sf2` path** as the third
-argument (see [Soundfonts](#soundfonts)); there are no Windows default search
-paths in the binary yet.
+```
+
+Pass a `.sf2` path as the third argument ([Soundfonts](#soundfonts)); this build
+does not search default paths on Windows.
 
 One-time MSYS2 setup (from a MinGW shell):
 
@@ -84,9 +78,8 @@ pacman -S mingw-w64-x86_64-gcc make
 ```
 
 Requirements: a C99 compiler (`cc` / `gcc`), `make`, and `tsf.h` / `tml.h` /
-`miniaudio.h` (vendored in the repo).  Implementation: **TinySoundFont** +
-**miniaudio** — no extra libraries to link beyond the OS.  Soundfonts are
-loaded at runtime — see [Soundfonts](#soundfonts).
+`miniaudio.h` (vendored). TinySoundFont and miniaudio — nothing else to link
+beyond the OS. Soundfonts load at runtime; see [Soundfonts](#soundfonts).
 
 ---
 
@@ -109,8 +102,7 @@ loaded at runtime — see [Soundfonts](#soundfonts).
 ./lba-midi-play Midi_mi_win.hqr 3
 ```
 
-Playback **ends automatically** when the track finishes; press **Enter** to
-stop early.
+Playback exits when the track ends; press Enter to stop early.
 
 ---
 
@@ -121,88 +113,79 @@ LBA1 exists in three MIDI variants, all 33 tracks (indices 0–32 — see
 
 | File | Version | Format | Target hardware |
 |------|---------|--------|-----------------|
-| `MIDI_MI.HQR` | DOS | XMIDI IFF | **General MIDI** over MPU-401 / Wave Blaster (e.g. Roland Sound Canvas SC-55) |
+| `MIDI_MI.HQR` | DOS | XMIDI IFF | General MIDI over MPU-401 / Wave Blaster (e.g. Roland Sound Canvas SC-55) |
 | `MIDI_SB.HQR` | DOS | XMIDI IFF | Sound Blaster OPL2/OPL3 FM synthesis |
 | `Midi_mi_win.hqr` | LBAWin port | Native SMF | General MIDI, Windows multimedia |
 
-For the **two DOS** HQRs, **`MIDI_MI`** is the **full General MIDI** soundtrack
-— written for **MPU-401 / Wave Blaster / external GM** class hardware (the
-high-quality path when you had the gear).  **`MIDI_SB`** is the **Sound Blaster
-FM** version: **simplified** arrangements for the **OPL** chip on the machines
-most players actually had.  Same music in spirit, but **MI** is the
-less-constrained arrangement; **SB** is the hardware compromise.
+For the two DOS HQRs, `MIDI_MI` is the full General MIDI soundtrack — aimed at
+MPU-401 / Wave Blaster / external GM hardware. `MIDI_SB` is the Sound Blaster FM
+version: simplified arrangements for the OPL chip on typical machines. Same
+music in spirit; MI is the less-constrained arrangement, SB the hardware
+compromise.
 
-The **MIDI_MI** data follows **General MIDI** (GM): fixed “program 1 = piano,
-33 = bass,” etc.  Some DOS menus also offered **Roland MT-32**, but MT-32 uses
-a **different** instrument list than GM, so the same file often sounds wrong on
-MT-32.  A **GM** module (e.g. Roland Sound Canvas **SC-55**) matches what this
-MIDI expects.
+`MIDI_MI` follows General MIDI (GM): fixed program numbers (e.g. piano, bass).
+Some DOS menus offered Roland MT-32, but MT-32 uses a different instrument map
+than GM, so the same file often sounds wrong there. A GM module (e.g. Roland
+SC-55) matches what this MIDI expects.
 
 This tool plays all three.
 
 ### MIDI_MI.HQR — DOS "MIDI Interface" version
 
-Intended for **General MIDI** playback on typical 1990s PC setups (MPU-401,
-Wave Blaster, or an external module such as a Roland **Sound Canvas SC-55**).
-Stored as **XMIDI IFF** (Miles Sound System format), converted to SMF on load.
-Arrangements are **richer** than the FM version: more simultaneous voices,
-instruments such as Fretless Bass, Orchestral Harp, Synth Brass, Piccolo, and
-layered pad sounds.  File sizes are typically **larger** (e.g. track 8:
-21 980 bytes vs 10 540 in MIDI_SB).
+Intended for General MIDI on typical 1990s setups (MPU-401, Wave Blaster, or an
+external module such as Roland Sound Canvas SC-55). Stored as XMIDI IFF (Miles),
+converted to SMF on load. Richer than the FM version: more voices, instruments
+like fretless bass, harp, synth brass, piccolo, layered pads. Files are usually
+larger (e.g. track 8: 21 980 bytes vs 10 540 in MIDI_SB).
 
-Composition-side, Vachey describes early LBA work on an **Atari 1040** with
-samplers, later reworked at **Delphine Records** studios — not the same chain
-as the shipped DOS GM files, but consistent with treating **MIDI_MI** as
-**GM**-targeted game audio ([MO5.COM interview, 2019](https://mag.mo5.com/165588/interview-de-philippe-vachey-compositeur-de-little-big-adventure/)).
+Vachey described early LBA work on an Atari 1040 with samplers, later studio work
+at Delphine Records — not the same pipeline as the shipped DOS GM files, but in
+line with MIDI_MI as GM-targeted game audio
+([MO5.COM interview, 2019](https://mag.mo5.com/165588/interview-de-philippe-vachey-compositeur-de-little-big-adventure/)).
 
 ### MIDI_SB.HQR — DOS "Sound Blaster FM" version
 
 Intended for the OPL2/OPL3 FM synthesis chip on Sound Blaster cards.  The
 original source (`PERSO.C`) selects `midi_sb.hqr` when `MidiFM` is set (FM
-driver active) and `midi_mi.hqr` otherwise.  Arrangements are **simplified**:
-fewer simultaneous voices, simpler instrument choices.  OPL FM chips have
+driver active) and `midi_mi.hqr` otherwise. Arrangements are simplified: fewer
+voices, simpler patches. OPL FM chips have
 limited polyphony and cannot reproduce complex pads or layered strings, so
 tracks were re-arranged accordingly.
 
 ### Midi_mi_win.hqr — LBAWin port version
 
-Shipped with the **LBAWin** Windows port (dated 2001), created by
-**Sébastien Viannay** — an original Adeline Software developer (story coding
-on LBA1, programming on LBA2).  Not a commercial release; distributed via
-the Magicball Network (`magicball.net`).  The GOG and Steam releases ship
-the DOS files only; `Midi_mi_win.hqr` must be sourced from LBAWin separately.
-This file is **fundamentally different** from the DOS HQR files:
+Shipped with the LBAWin Windows port (dated 2001), by Sébastien Viannay (Adeline
+— story coding on LBA1, programming on LBA2). Not a commercial release;
+distributed via Magicball Network (`magicball.net`). GOG and Steam ship the DOS
+files only; `Midi_mi_win.hqr` comes from LBAWin separately. It differs from the
+DOS HQRs:
 
-- **Native SMF** (Standard MIDI File) — no XMIDI wrapping, no conversion needed
-- **SMF Format 1** (multi-track) with up to 14 separate instrument tracks per song
-- **Higher PPQN**: mostly 384 (some tracks 96 or 120) vs 60 for XMIDI-converted DOS
-- **Real tempo events** encoded per-track (64–133 BPM range) vs forced 120 BPM
-- **Longer arrangements**: most tracks are 30–50% larger in decompressed size
-- **Tracks 24/25 swapped**: the DOS version had a unique ~3 kB piece for 24/25;
-  the WIN version replaced both with a copy of track 3
+- Native SMF — no XMIDI wrapping
+- SMF format 1 (multi-track), up to 14 instrument tracks per song
+- Higher PPQN: mostly 384 (some 96 or 120) vs 60 for converted DOS XMIDI
+- Real tempo per track (about 64–133 BPM) vs forced 120 BPM in this tool’s DOS path
+- Longer arrangements: most tracks ~30–50% larger decompressed
+- Tracks 24/25: DOS had a unique ~3 kB pair; WIN replaced both with a copy of track 3
 
 Track 31 (Adeline logo jingle) is slightly shorter in WIN (139 vs 166 bytes)
 and track 26 (FLA flute) is nearly identical.
 
 ### Soundfonts and the three MIDI sources
 
-There is no single “right” **soundfont** to use with the GM HQRs — part of the
-fun is **trying different `.sf2` banks**.  That is separate from **which HQR**
-you open: **`MIDI_MI`** vs **`MIDI_SB`** are different **arrangements** (GM vs
-FM-targeted), as at the start of this section.
+There is no single “right” soundfont for the GM HQRs; swapping `.sf2` files
+changes the result a lot. That is separate from which HQR you open: `MIDI_MI`
+and `MIDI_SB` are different arrangements (GM vs FM-targeted), as above.
 
-The interesting part of playing **`MIDI_MI`** / **`Midi_mi_win`** today is
-**trying different General MIDI soundfonts**: the same MIDI can feel very
-different depending on the bank, which is what this tool is really for.
+Playing `MIDI_MI` or `Midi_mi_win` today is largely about trying different GM
+soundfonts — same MIDI, different bank, different character.
 
 ---
 
 ## Tracks
 
-LBA1 uses **33 MIDI indices** (0–32) across the three HQR variants.  Scene
-assignments, decompressed sizes, duplicate-byte relationships, CD vs MIDI
-routing, and notes on **track naming** (vs Philippe Vachey’s separate OST
-release) are documented in **[TRACKS.md](TRACKS.md)**.
+LBA1 uses 33 MIDI indices (0–32) across the three HQR variants. Scene
+assignments, sizes, duplicates, CD vs MIDI routing, and naming caveats (vs
+Philippe Vachey’s separate OST) are in [TRACKS.md](TRACKS.md).
 
 ---
 
@@ -243,10 +226,10 @@ track 31 and track 26 use mode 0 (uncompressed) in both DOS and WIN.
 
 ## XMIDI Format
 
-LBA uses the **XMIDI** format produced by **Miles Sound System (MSS)** — John
-Miles / Miles Design (later [RAD Game Tools](https://www.radgametools.com/miles.htm);
-see [Wikipedia](https://en.wikipedia.org/wiki/Miles_Sound_System)).  XMIDI is an
-IFF FORM container wrapping MIDI event data.
+LBA uses XMIDI from Miles Sound System (MSS) — John Miles / Miles Design (later
+[RAD Game Tools](https://www.radgametools.com/miles.htm);
+[Wikipedia](https://en.wikipedia.org/wiki/Miles_Sound_System)). XMIDI is an IFF
+FORM container around MIDI event data.
 
 ```
 IFF structure
@@ -271,74 +254,67 @@ Key differences from Standard MIDI File (SMF):
 | Tempo | Forced to 500 000 µs/beat during conversion | As written |
 | Controllers 0x6E–0x78 | Miles-specific (loop, branch, timbres) | N/A |
 
-The converter (`xmidi.c`, adapted from ScummVM/Exult via TwinEngine) produces
-**SMF format 0** at 60 PPQN, tempo 500 000 µs/beat (= 120 BPM).
+The converter (`xmidi.c`, from ScummVM/Exult via TwinEngine) outputs SMF format 0
+at 60 PPQN, tempo 500 000 µs/beat (= 120 BPM).
 
 ---
 
 ## Soundfonts
 
-**Auto-discovery is intentionally small** — only a few paths where Linux and
-macOS commonly install a **default General MIDI** bank.  Anything else (big
-FluidR3, GeneralUser, a custom download) you pass as the **third argument**.
+Auto-discovery only checks a few paths where Linux and macOS often put a default
+GM bank. Anything else (FluidR3, GeneralUser, a download) — pass it as the third
+argument.
 
-The tool looks for a soundfont in this order:
+Search order:
 
-1. **Third argument** if you pass one: `./lba-midi-play MIDI_MI.HQR 3 my.sf2`
+1. Third argument if given: `./lba-midi-play MIDI_MI.HQR 3 my.sf2`
 2. `/Library/Audio/Sounds/Banks/FluidR3_GM_GS.sf2` (macOS — if you placed that file there)
 3. `/usr/share/sounds/sf2/default-GM.sf2` (Debian/Ubuntu `update-alternatives` default GM)
 4. `/usr/share/sounds/sf2/TimGM6mb.sf2` (e.g. `timgm6mb-soundfont` package)
 5. `/usr/share/soundfonts/default.sf2` (Arch symlink — see [Arch Linux](#linux-installing-a-soundfont) below)
 
-If nothing matches, pass **any** `.sf2` path (absolute or relative to your shell
-directory), e.g. next to the binary: `./FluidR3_GM.sf2`.
+If nothing matches, pass any `.sf2` path (absolute or relative), e.g.
+`./FluidR3_GM.sf2` next to the binary.
 
 ### Linux: installing a soundfont
 
-This tool reads the `.sf2` file directly — you do **not** need FluidSynth,
-TiMidity++, or a MIDI daemon.
+The program reads `.sf2` directly — no FluidSynth, TiMidity++, or MIDI daemon.
 
-**Easiest:** `sudo apt install timgm6mb-soundfont` on Debian/Ubuntu — you get
-**TimGM6mb** and **`default-GM.sf2`** is registered via `update-alternatives`,
-which matches the search list above.
+On Debian/Ubuntu, `sudo apt install timgm6mb-soundfont` installs TimGM6mb and
+registers `default-GM.sf2` via `update-alternatives`, which matches the search
+list above.
 
-**Larger / nicer banks** (FluidR3, etc.): install the package (e.g.
-`fluid-soundfont-gm`) and either run `update-alternatives --config default-GM.sf2`
-so **`default-GM.sf2`** points at FluidR3, **or** pass the full path to the
-`.sf2` as the third argument (no need to change alternatives).
+Larger banks (FluidR3, etc.): install the package (e.g. `fluid-soundfont-gm`)
+and either point `update-alternatives --config default-GM.sf2` at FluidR3 or
+pass the full path to the `.sf2` as the third argument.
 
-- **Arch Linux:** install a soundfont package from the [MIDI](https://wiki.archlinux.org/title/MIDI)
-  / [FluidSynth](https://wiki.archlinux.org/title/FluidSynth) wikis (e.g.
-  `soundfont-fluid`).  Optional: symlink your preferred bank to
-  **`/usr/share/soundfonts/default.sf2`** so auto-discovery finds it without
-  typing a path every time.
+Arch: see [MIDI](https://wiki.archlinux.org/title/MIDI) /
+[FluidSynth](https://wiki.archlinux.org/title/FluidSynth) wikis (e.g.
+`soundfont-fluid`). You can symlink a preferred bank to
+`/usr/share/soundfonts/default.sf2` so auto-discovery finds it.
 
 ### macOS
 
-Put a GM `.sf2` in **`/Library/Audio/Sounds/Banks/`** if you want auto-discovery
-to find **`FluidR3_GM_GS.sf2`** (that exact name — or pass any path as the third
-argument).  **`~/Library/Audio/Sounds/Banks/`** is not searched; use an
-explicit path for user-local files.
+Put a GM `.sf2` in `/Library/Audio/Sounds/Banks/` as `FluidR3_GM_GS.sf2` for
+auto-discovery, or pass any path as the third argument. `~/Library/Audio/...`
+is not searched.
 
 ### Windows
 
-No default paths in this build — pass **`lba-midi-play … HQR index C:\path\to\font.sf2`**
-(or MSYS-style paths).
+No default paths — `lba-midi-play … HQR index C:\path\to\font.sf2` (or MSYS
+paths).
 
-### Recommended soundfonts (open / common for 90s GM games)
+### Soundfonts people often use (all General MIDI)
 
-All are **General MIDI** — good for experimenting; LBA has no single “correct”
-bank.
+| Soundfont | Rough size | Notes |
+|-----------|------------|-------|
+| TimGM6mb | ~6 MB | Small; many Linux distros ([Debian](https://packages.debian.org/timgm6mb-soundfont)). |
+| FluidR3 GM | ~140 MB | Common reference; [Debian](https://packages.debian.org/sid/fluid-soundfont-gm), often `FluidR3_GM.sf2` elsewhere. |
+| GeneralUser GS | ~30 MB | Free GM/GS; [author’s site](https://schristiancollins.com/generaluser.php). |
+| FreePats General MIDI | varies | Open instruments — [FreePats](https://freepats.zenvoid.org/SoundSets/general-midi.html). |
 
-| Soundfont | Rough size | Why people use it |
-|-----------|------------|-------------------|
-| **TimGM6mb** | ~6 MB | Small, ships with many Linux distros ([Debian package](https://packages.debian.org/timgm6mb-soundfont)); fine for a quick listen. |
-| **FluidR3 GM** | ~140 MB | Very common reference bank; [Debian `fluid-soundfont-gm`](https://packages.debian.org/sid/fluid-soundfont-gm), often packaged elsewhere as `FluidR3_GM.sf2`. |
-| **GeneralUser GS** | ~30 MB | Popular free GM/GS bank, good for retro game MIDI — [author’s site](https://schristiancollins.com/generaluser.php). |
-| **FreePats General MIDI** | varies | Fully open instrument set — [FreePats](https://freepats.zenvoid.org/SoundSets/general-midi.html). |
-
-Pass the path to any of these as the **third argument** if they are not your
-distro’s `default-GM` target.
+Pass the path as the third argument if it is not your distro’s `default-GM`
+target.
 
 ---
 
@@ -382,24 +358,21 @@ Speaker output
 
 ### Timing
 
-The audio callback advances playback time by `1000 / 44100 ≈ 0.023 ms` per
-sample.  MIDI events are fired when `current_time_ms >= event->time`.  This
-gives sample-accurate timing at the cost of slightly higher per-frame CPU (one
-MIDI check per sample), which is negligible for MIDI densities typical of
-these tracks.
+The callback renders audio in blocks between MIDI events: when the internal
+clock reaches `event->time`, it dispatches to TinySoundFont, then renders samples
+up to the next event (or the end of the buffer).
 
 ### License
 
-This project is **GNU General Public License v2.0 only** (`GPL-2.0-only`) —
-see [`LICENSE`](LICENSE).  That matches the upstream terms of the adapted
-**HQR** and **XMIDI** code (TwinEngine / ScummVM / Exult).  **TinySoundFont**,
-**TML**, and **miniaudio** remain under their own licenses in the respective
-headers (MIT or public domain); they are bundled in a way compatible with GPLv2.
+GPL-2.0-only — see [`LICENSE`](LICENSE). Same spirit as the adapted HQR and
+XMIDI code (TwinEngine / ScummVM / Exult). TinySoundFont, TML, and miniaudio
+keep their own licenses in the headers (MIT or public domain); bundled in a
+GPLv2-compatible way.
 
 ### Credits
 
-- **LBA MIDI music** — Adeline Software International / Philippe Vachey (1994)
-- **TwinEngine** (HQR + XMIDI code) — The TwinEngine team (GPL v2)
-- **XMIDI conversion** — Originally ScummVM / Exult projects (GPL v2)
-- **TinySoundFont / TML** — Bernhard Schelling (MIT)
-- **miniaudio** — David Reid (MIT / public domain)
+- LBA MIDI music — Adeline Software International / Philippe Vachey (1994)
+- TwinEngine (HQR + XMIDI code) — The TwinEngine team (GPL v2)
+- XMIDI conversion — ScummVM / Exult lineage (GPL v2)
+- TinySoundFont / TML — Bernhard Schelling (MIT)
+- miniaudio — David Reid (MIT / public domain)
