@@ -1,13 +1,46 @@
 # lba-midi-play
 
-A standalone C99 command-line tool for playing the MIDI music from
-**Little Big Adventure 1** (Relentless: Twinsen's Adventure, 1994) directly
-from the game's HQR MIDI resources (`MIDI_MI.HQR`, `MIDI_SB.HQR`, or
-`Midi_mi_win.hqr`).
+A small **command-line** player for the MIDI music in **Little Big Adventure 1**
+(1994): point it at `MIDI_MI.HQR`, `MIDI_SB.HQR`, or `Midi_mi_win.hqr` from your
+game files and it plays a chosen track through your speakers.
 
-Uses only single-header C libraries: **TinySoundFont** (TSF + TML) for
-synthesis and **miniaudio** for audio output. No external library dependencies
-beyond what the OS provides.
+---
+
+## Quick start
+
+**You need two things:**
+
+1. **An HQR file from the game** (e.g. `MIDI_MI.HQR`) — copy it next to the
+   built binary or pass a path to it.
+2. **A General MIDI `.sf2` soundfont** — the HQR only contains *MIDI* (note
+   data). A soundfont is a big file that defines what those notes *sound like*.
+   Without one, there is no audio.
+
+**Easiest path**
+
+```sh
+make
+./lba-midi-play MIDI_MI.HQR 3
+```
+
+- **Linux:** install a font package first (e.g. `timgm6mb-soundfont` on
+  Debian/Ubuntu — see [Soundfonts](#soundfonts)) so the tool can find a
+  system-wide `.sf2` automatically.
+- **macOS:** drop **`FluidR3_GM_GS.sf2`** into `/Library/Audio/Sounds/Banks/`, or
+  pass any `.sf2` path as the third argument (see [Soundfonts](#soundfonts)).
+- **Windows:** pass the full path to a `.sf2` as the third argument (no default
+  search paths in this build yet).
+
+If you get **no soundfont found**, add the font explicitly:
+
+```sh
+./lba-midi-play MIDI_MI.HQR 3 ./MyFont.sf2
+```
+
+Press **Enter** to stop playback.
+
+**More:** [Usage](#usage) · [Which HQR file?](#the-midi-files) ·
+[Track index](TRACKS.md) · [How it works](#implementation-notes)
 
 ---
 
@@ -24,8 +57,9 @@ make
 ```
 
 Requirements: a C99 compiler (`cc`), `make`, and `tsf.h` / `tml.h` /
-`miniaudio.h` already present (downloaded by the repo).  A soundfont is
-loaded at runtime — see [Soundfonts](#soundfonts) below.
+`miniaudio.h` (vendored in the repo).  Implementation: **TinySoundFont** +
+**miniaudio** — no extra libraries to link beyond the OS.  Soundfonts are
+loaded at runtime — see [Soundfonts](#soundfonts).
 
 ---
 
@@ -63,10 +97,11 @@ LBA1 exists in three MIDI variants, all 33 tracks (indices 0–32 — see
 | `MIDI_SB.HQR` | DOS | XMIDI IFF | Sound Blaster OPL2/OPL3 FM synthesis |
 | `Midi_mi_win.hqr` | LBAWin port | Native SMF | General MIDI, Windows multimedia |
 
-The **MIDI_MI** data is GM-oriented.  Some setups expose **Roland MT-32**, but
-MT-32 is not a GM device (different patch map), so GM files through MT-32 are
-usually a poor match — SC-55–class **General MIDI** modules align with the
-intended mapping.
+The **MIDI_MI** data follows **General MIDI** (GM): fixed “program 1 = piano,
+33 = bass,” etc.  Some DOS menus also offered **Roland MT-32**, but MT-32 uses
+a **different** instrument list than GM, so the same file often sounds wrong on
+MT-32.  A **GM** module (e.g. Roland Sound Canvas **SC-55**) matches what this
+MIDI expects.
 
 This tool plays all three.
 
@@ -205,45 +240,67 @@ The converter (`xmidi.c`, adapted from ScummVM/Exult via TwinEngine) produces
 
 ## Soundfonts
 
-The tool discovers soundfonts in this order:
+**Auto-discovery is intentionally small** — only a few paths where Linux and
+macOS commonly install a **default General MIDI** bank.  Anything else (big
+FluidR3, GeneralUser, a custom download) you pass as the **third argument**.
 
-1. Path given as third argument: `./lba-midi-play MIDI_MI.HQR 3 my.sf2`
-2. `/Library/Audio/Sounds/Banks/FluidR3_GM_GS.sf2`
-3. `/Library/Audio/Sounds/Banks/Roland_SC-55_v3.7.sf2`
-4. `/usr/share/sounds/sf2/FluidR3_GM.sf2`
-5. `/usr/share/soundfonts/FluidR3_GM.sf2`
-6. `/usr/share/sounds/sf2/TimGM6mb.sf2`
+The tool looks for a soundfont in this order:
 
-If none of these are present, pass a path explicitly.
+1. **Third argument** if you pass one: `./lba-midi-play MIDI_MI.HQR 3 my.sf2`
+2. `/Library/Audio/Sounds/Banks/FluidR3_GM_GS.sf2` (macOS — if you placed that file there)
+3. `/usr/share/sounds/sf2/default-GM.sf2` (Debian/Ubuntu `update-alternatives` default GM)
+4. `/usr/share/sounds/sf2/TimGM6mb.sf2` (e.g. `timgm6mb-soundfont` package)
+5. `/usr/share/soundfonts/default.sf2` (Arch symlink — see [Arch Linux](#linux-installing-a-soundfont) below)
+
+If nothing matches, pass **any** `.sf2` path (absolute or relative to your shell
+directory), e.g. next to the binary: `./FluidR3_GM.sf2`.
 
 ### Linux: installing a soundfont
 
-You only need a GM-compatible `.sf2` on disk in one of the `/usr/share/...`
-paths above (or pass it as the third argument).  This tool loads the file
-directly with TinySoundFont — you do **not** need FluidSynth, TiMidity++, or a
-MIDI daemon.
+This tool reads the `.sf2` file directly — you do **not** need FluidSynth,
+TiMidity++, or a MIDI daemon.
 
-- **Debian / Ubuntu:** `sudo apt install timgm6mb-soundfont` installs
-  `TimGM6mb.sf2` to `/usr/share/sounds/sf2/`, which matches the search list.
-  For FluidR3 instead (larger, higher quality):
-  `sudo apt install fluid-soundfont-gm`.
+**Easiest:** `sudo apt install timgm6mb-soundfont` on Debian/Ubuntu — you get
+**TimGM6mb** and **`default-GM.sf2`** is registered via `update-alternatives`,
+which matches the search list above.
 
-- **Arch Linux:** Package names differ; the ArchWiki [MIDI](https://wiki.archlinux.org/title/MIDI)
-  article (SoundFonts section) and [FluidSynth](https://wiki.archlinux.org/title/FluidSynth)
-  page list common options (e.g. `soundfont-fluid` for FluidR3 under
-  `/usr/share/soundfonts/`).  Install one, then run this tool without extra setup
-  if the file lands on a searched path.
+**Larger / nicer banks** (FluidR3, etc.): install the package (e.g.
+`fluid-soundfont-gm`) and either run `update-alternatives --config default-GM.sf2`
+so **`default-GM.sf2`** points at FluidR3, **or** pass the full path to the
+`.sf2` as the third argument (no need to change alternatives).
 
-### Recommended soundfonts
+- **Arch Linux:** install a soundfont package from the [MIDI](https://wiki.archlinux.org/title/MIDI)
+  / [FluidSynth](https://wiki.archlinux.org/title/FluidSynth) wikis (e.g.
+  `soundfont-fluid`).  Optional: symlink your preferred bank to
+  **`/usr/share/soundfonts/default.sf2`** so auto-discovery finds it without
+  typing a path every time.
 
-| Soundfont | Size | Notes |
-|-----------|------|-------|
-| **FluidR3_GM.sf2** | 144 MB | Excellent all-rounder; widely available |
-| **GeneralUser GS** | ~30 MB | Lightweight, good GM coverage — [download](https://schristiancollins.com/generaluser.php) |
-| **TimGM6mb.sf2** | 6 MB | Tiny, usable, common on Linux |
+### macOS
 
-`MIDI_MI` is General MIDI — there is no single “authoritative” bank; try a few
-and use what sounds best to you.
+Put a GM `.sf2` in **`/Library/Audio/Sounds/Banks/`** if you want auto-discovery
+to find **`FluidR3_GM_GS.sf2`** (that exact name — or pass any path as the third
+argument).  **`~/Library/Audio/Sounds/Banks/`** is not searched; use an
+explicit path for user-local files.
+
+### Windows
+
+No default paths in this build — pass **`lba-midi-play … HQR index C:\path\to\font.sf2`**
+(or MSYS-style paths).
+
+### Recommended soundfonts (open / common for 90s GM games)
+
+All are **General MIDI** — good for experimenting; LBA has no single “correct”
+bank.
+
+| Soundfont | Rough size | Why people use it |
+|-----------|------------|-------------------|
+| **TimGM6mb** | ~6 MB | Small, ships with many Linux distros ([Debian package](https://packages.debian.org/timgm6mb-soundfont)); fine for a quick listen. |
+| **FluidR3 GM** | ~140 MB | Very common reference bank; [Debian `fluid-soundfont-gm`](https://packages.debian.org/sid/fluid-soundfont-gm), often packaged elsewhere as `FluidR3_GM.sf2`. |
+| **GeneralUser GS** | ~30 MB | Popular free GM/GS bank, good for retro game MIDI — [author’s site](https://schristiancollins.com/generaluser.php). |
+| **FreePats General MIDI** | varies | Fully open instrument set — [FreePats](https://freepats.zenvoid.org/SoundSets/general-midi.html). |
+
+Pass the path to any of these as the **third argument** if they are not your
+distro’s `default-GM` target.
 
 ---
 

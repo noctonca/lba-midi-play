@@ -34,17 +34,19 @@
 #include "xmidi.h"
 
 /* -------------------------------------------------------------------------
- * Default soundfont search paths (tried in order when no sf2 arg given)
+ * Default soundfont search paths (tried in order when no sf2 arg given).
+ * Keep this list short: distro "default GM" locations + one common macOS path.
+ * Larger banks (FluidR3, GeneralUser, …) — pass as the third CLI argument.
  * ---------------------------------------------------------------------- */
 
 static const char *DEFAULT_SF2[] = {
-    /* macOS system soundfonts */
+    /* macOS: typical manual install into Apple's Banks folder */
     "/Library/Audio/Sounds/Banks/FluidR3_GM_GS.sf2",
-    "/Library/Audio/Sounds/Banks/Roland_SC-55_v3.7.sf2",
-    /* Common Linux paths */
-    "/usr/share/sounds/sf2/FluidR3_GM.sf2",
-    "/usr/share/soundfonts/FluidR3_GM.sf2",
+    /* Linux: Debian/Ubuntu update-alternatives (often TimGM6mb or fluid-soundfont-gm) */
+    "/usr/share/sounds/sf2/default-GM.sf2",
     "/usr/share/sounds/sf2/TimGM6mb.sf2",
+    /* Linux: Arch symlink convention (see ArchWiki FluidSynth) */
+    "/usr/share/soundfonts/default.sf2",
     NULL
 };
 
